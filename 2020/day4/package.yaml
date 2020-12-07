@@ -1,0 +1,25 @@
+name: day4
+version: 0.1.0.0
+#synopsis:
+#description:
+homepage: https://github.com/githubuser/day4#readme
+license: BSD3
+author: Author name here
+maintainer: example@example.com
+copyright: 2020 Author name here
+category: Web
+extra-source-files:
+  - README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - attoparsec
+  - text
+  - split
+  - safe
+  - containers
+
+executables:
+  day4:
+    source-dirs: src
+    main: Main.hs
