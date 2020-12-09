@@ -10,7 +10,7 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as C
 import Data.Either.Combinators (rightToMaybe)
-import Data.Maybe (fromMaybe, listToMaybe, mapMaybe)
+import Data.Maybe (listToMaybe, mapMaybe)
 
 data OperationType = Acc | Jmp | Nop
   deriving (Show, Eq)
@@ -18,18 +18,22 @@ data OperationType = Acc | Jmp | Nop
 data Operation = Operation {operationType :: OperationType, operationValue :: Int}
   deriving (Show)
 
+data TerminationCondition = RepeatedOp | Eof
+  deriving (Show, Eq)
+
+runProgram :: (TerminationCondition -> Int -> a) -> Int -> (Int, [Int]) -> [Operation] -> a
+runProgram tFn idx (accum, prev) ops
+  | idx `elem` prev = tFn RepeatedOp accum
+  | idx >= length ops = tFn Eof accum
+  | otherwise =
+    let op = ops !! idx
+     in case operationType op of
+          Acc -> runProgram tFn (idx + 1) (accum + operationValue op, idx : prev) ops
+          Jmp -> runProgram tFn (idx + operationValue op) (accum, idx : prev) ops
+          Nop -> runProgram tFn (idx + 1) (accum, idx : prev) ops
+
 part1 :: [Operation] -> Int
-part1 = go 0 (0, [])
-  where
-    go :: Int -> (Int, [Int]) -> [Operation] -> Int
-    go idx (accum, prev) ops
-      | idx `elem` prev = accum
-      | otherwise =
-        let op = ops !! idx
-         in case operationType op of
-              Acc -> go (idx + 1) (accum + operationValue op, idx : prev) ops
-              Jmp -> go (idx + operationValue op) (accum, idx : prev) ops
-              Nop -> go (idx + 1) (accum, idx : prev) ops
+part1 = runProgram (\_ accum -> accum) 0 (0, [])
 
 replaceOperations :: [Operation] -> [[Operation]]
 replaceOperations ops = alter <$> zip [0 ..] (replicate (length opsToChange) ops)
@@ -46,19 +50,11 @@ replaceOperations ops = alter <$> zip [0 ..] (replicate (length opsToChange) ops
     swap (Operation Nop val) = Operation Jmp val
     swap op = op
 
-part2 :: [Operation] -> Int
-part2 operations = fromMaybe 0 $ listToMaybe $ mapMaybe (go 0 (0, [])) $ replaceOperations operations
+part2 :: [Operation] -> Maybe Int
+part2 = listToMaybe . mapMaybe (runProgram terminationFunction 0 (0, [])) . replaceOperations
   where
-    go :: Int -> (Int, [Int]) -> [Operation] -> Maybe Int
-    go idx (accum, prev) ops
-      | idx `elem` prev = Nothing
-      | idx >= length ops = Just accum
-      | otherwise =
-        let op = ops !! idx
-         in case operationType op of
-              Acc -> go (idx + 1) (accum + operationValue op, idx : prev) ops
-              Jmp -> go (idx + operationValue op) (accum, idx : prev) ops
-              Nop -> go (idx + 1) (accum, idx : prev) ops
+    terminationFunction RepeatedOp _ = Nothing
+    terminationFunction Eof accum = pure accum
 
 operationParser :: Parser Operation
 operationParser =
