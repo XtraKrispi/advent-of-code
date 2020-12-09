@@ -21,40 +21,38 @@ data Operation = Operation {operationType :: OperationType, operationValue :: In
 data TerminationCondition = RepeatedOp | Eof
   deriving (Show, Eq)
 
-runProgram :: (TerminationCondition -> Int -> a) -> Int -> (Int, [Int]) -> [Operation] -> a
-runProgram tFn idx (accum, prev) ops
-  | idx `elem` prev = tFn RepeatedOp accum
-  | idx >= length ops = tFn Eof accum
+runProgram :: (Int -> TerminationCondition -> a) -> (Operation -> Int -> Operation) -> Int -> (Int, [Int]) -> [Operation] -> a
+runProgram tFn idxFn idx (accum, prev) ops
+  | idx `elem` prev = tFn accum RepeatedOp
+  | idx >= length ops = tFn accum Eof
   | otherwise =
-    let op = ops !! idx
+    let op = idxFn (ops !! idx) idx
      in case operationType op of
-          Acc -> runProgram tFn (idx + 1) (accum + operationValue op, idx : prev) ops
-          Jmp -> runProgram tFn (idx + operationValue op) (accum, idx : prev) ops
-          Nop -> runProgram tFn (idx + 1) (accum, idx : prev) ops
+          Acc -> runProgram tFn idxFn (idx + 1) (accum + operationValue op, idx : prev) ops
+          Jmp -> runProgram tFn idxFn (idx + operationValue op) (accum, idx : prev) ops
+          Nop -> runProgram tFn idxFn (idx + 1) (accum, idx : prev) ops
 
 part1 :: [Operation] -> Int
-part1 = runProgram (\_ accum -> accum) 0 (0, [])
+part1 = runProgram const const 0 (0, [])
 
-replaceOperations :: [Operation] -> [[Operation]]
-replaceOperations ops = alter <$> zip [0 ..] (replicate (length opsToChange) ops)
+part2 :: [Operation] -> Maybe Int
+part2 ops =
+  listToMaybe
+    . mapMaybe (\(idx, ops) -> runProgram terminationFunction (idxFn idx) 0 (0, []) ops)
+    $ zip [0 ..] (replicate (length opsToChange) ops)
   where
     opsToChange =
       map fst
         . filter
           (\(_, Operation operationType _) -> operationType == Jmp || operationType == Nop)
         $ zip [0 ..] ops
-    alter (idx, singleRun) =
-      let operationIndex = opsToChange !! idx
-       in foldr (\(idx', operation) results -> (if idx' == operationIndex then swap operation else operation) : results) [] (zip [0 ..] singleRun)
+    idxFn :: Int -> Operation -> Int -> Operation
+    idxFn opIndex op idx = if opsToChange !! opIndex == idx then swap op else op
+    terminationFunction _ RepeatedOp = Nothing
+    terminationFunction accum Eof = pure accum
     swap (Operation Jmp val) = Operation Nop val
     swap (Operation Nop val) = Operation Jmp val
     swap op = op
-
-part2 :: [Operation] -> Maybe Int
-part2 = listToMaybe . mapMaybe (runProgram terminationFunction 0 (0, [])) . replaceOperations
-  where
-    terminationFunction RepeatedOp _ = Nothing
-    terminationFunction Eof accum = pure accum
 
 operationParser :: Parser Operation
 operationParser =
