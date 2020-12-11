@@ -1,20 +1,20 @@
-name:                day10
-version:             0.1.0.0
+name: day10
+version: 0.1.0.0
 #synopsis:
 #description:
-homepage:            https://github.com/githubuser/day10#readme
-license:             BSD3
-author:              Author name here
-maintainer:          example@example.com
-copyright:           2020 Author name here
-category:            Web
+homepage: https://github.com/githubuser/day10#readme
+license: BSD3
+author: Author name here
+maintainer: example@example.com
+copyright: 2020 Author name here
+category: Web
 extra-source-files:
-- README.md
+  - README.md
 
 dependencies:
   - base >= 4.7 && < 5
 
 executables:
   day10:
-    source-dirs:      src
-    main:             Main.hs
+    source-dirs: src
+    main: Main.hs

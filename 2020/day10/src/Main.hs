@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main where
@@ -14,15 +16,20 @@ paths adapters = go maxAdapter 0 adapters
     go max current _ | current + 3 == max = [[]]
     go max current joltages = do
       possibility <- filter (\j -> j - current < 4 && j - current >= 0) joltages
-
       ((possibility, possibility - current) :) <$> go max possibility (delete possibility joltages)
+
+-- for adapter in sorted(adapters):
+--     for diff in range(1, 4):
+--         next_adapter = adapter + diff
+--         if next_adapter in adapters:
+--             paths[next_adapter] += paths[adapter]
 
 safeMinimum :: Ord a => [a] -> Maybe a
 safeMinimum a
   | null a = Nothing
   | otherwise = Just $ minimum a
 
-part1 :: [Int] -> Int
+part1 :: [Int] -> Integer
 part1 input =
   uncurry (*)
     . foldr
@@ -39,10 +46,11 @@ part1 input =
     . sort
     $ input
 
-part2 :: [Int] -> Int
-part2 =
-  length . paths
-    . sort
+-- Not mine, I intend to rewrite using different mechanisms, but this is from SimonBaars
+part2 :: [Int] -> Integer
+part2 input = head $ foldr (\i acc -> sum [acc !! (j - i -1) | j <- [i + 1 .. i + 3], j < length n, (n !! j) - (n !! i) <= 3] : acc) [1] [0 .. length n -2]
+  where
+    n = sort $ maximum input + 3 : 0 : input
 
 solve :: FilePath -> IO ()
 solve =
