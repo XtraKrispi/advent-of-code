@@ -1,0 +1,22 @@
+name: day13
+version: 0.1.0.0
+#synopsis:
+#description:
+homepage: https://github.com/githubuser/day13#readme
+license: BSD3
+author: Author name here
+maintainer: example@example.com
+copyright: 2020 Author name here
+category: Web
+extra-source-files:
+  - README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - split
+  - safe
+
+executables:
+  day13:
+    source-dirs: src
+    main: Main.hs
