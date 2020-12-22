@@ -1,0 +1,23 @@
+name: day14
+version: 0.1.0.0
+#synopsis:
+#description:
+homepage: https://github.com/githubuser/day14#readme
+license: BSD3
+author: Author name here
+maintainer: example@example.com
+copyright: 2020 Author name here
+category: Web
+extra-source-files:
+  - README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - attoparsec
+  - bytestring
+  - containers
+
+executables:
+  day14:
+    source-dirs: src
+    main: Main.hs
