@@ -4,8 +4,8 @@ module Main where
 
 import Control.Arrow (Arrow ((&&&)))
 import Data.Bifunctor (Bifunctor (first))
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as Map
+import Data.IntMap.Strict (IntMap)
+import qualified Data.IntMap.Strict as Map
 import Debug.Trace (trace)
 
 -- [0,3,6]
@@ -31,32 +31,33 @@ newtype Turn = Turn {unTurn :: Int}
   deriving (Show, Eq, Num)
 
 part1 :: Int -> [Int] -> Int
-part1 n nums = snd $ head $ fst $ go (Turn n) $ seedData nums
+part1 n nums = snd $ fst $ go (Turn n) $ seedData nums
 
-seedData :: [Int] -> ([(Turn, Int)], IntMap [Turn])
-seedData = foldl (\(nums, m) (idx, num) -> ((Turn idx, num) : nums, Map.insertWith (++) num [Turn idx] m)) ([], Map.empty) . zip [1 ..]
+seedData :: [Int] -> ((Turn, Int), IntMap (Turn, Maybe Turn))
+seedData = foldl (\(nums, m) (idx, num) -> ((Turn idx, num), Map.insert num (Turn idx, Nothing) m)) ((Turn 0, 1), Map.empty) . zip [1 ..]
 
-go :: Turn -> ([(Turn, Int)], IntMap [Turn]) -> ([(Turn, Int)], IntMap [Turn])
-go idx ([], m) = ([], Map.empty)
-go idx r@(last@(lastTurn, lastSpoken) : rest, m) =
+go :: Turn -> ((Turn, Int), IntMap (Turn, Maybe Turn)) -> ((Turn, Int), IntMap (Turn, Maybe Turn))
+go idx ((lastTurn, lastSpoken), m) =
   let thisNum =
         case Map.lookup lastSpoken m of
-          Just (last : lastLast : _) ->
+          Just (last, Just lastLast) ->
             unTurn $ last - lastLast
           _ ->
             0
       thisTurn = lastTurn + 1
+      toInsert = case Map.lookup thisNum m of
+        Just (last, Just lastLast) ->
+          (thisTurn, Just last)
+        Just (last, Nothing) ->
+          (thisTurn, Just last)
+        Nothing ->
+          (thisTurn, Nothing)
    in if thisTurn == idx
-        then ((thisTurn, thisNum) : last : rest, Map.insertWith (++) thisNum [thisTurn] m)
-        else go idx ((thisTurn, thisNum) : last : rest, Map.insertWith (++) thisNum [thisTurn] m)
+        then ((thisTurn, thisNum), Map.insert thisNum toInsert m)
+        else go idx ((thisTurn, thisNum), Map.insert thisNum toInsert m)
 
---(((nextIndex, nextNum) : (lastIndex, lastSpoken) : rest), )
-
-part2 :: [Int] -> Int
-part2 = const 0
-
-solve :: Int -> [Int] -> IO ()
-solve n = print . (part1 2020 &&& part2)
+solve :: Int -> Int -> [Int] -> IO ()
+solve n n' = print . (part1 n &&& part1 n')
 
 main :: IO ()
-main = solve 2020 [9, 3, 1, 0, 8, 4]
+main = solve 2020 30000000 [9, 3, 1, 0, 8, 4]
