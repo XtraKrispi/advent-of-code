@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Main where
 
@@ -18,11 +19,6 @@ import Debug.Trace (trace)
 
 data InfixOp = Add | Multiply
   deriving (Show)
-
-{-
-(Binary (Binary (Digit 2) Multiply (Digit 3)) Add (Binary (Digit 4) Multiply (Digit 5))
-2*3+(4*5)
--}
 
 data Expr
   = Digit Int
@@ -59,14 +55,59 @@ parenParser = do
   string ")"
   pure expr
 
+-- | Part 2 stuff is here
+data TermData = Number Int | Operator InfixOp | Parened [Term]
+  deriving (Show)
+
+newtype Term = Term
+  {unTerm :: (TermData, Bool)}
+  deriving
+    (Show)
+
+formString :: [Term] -> String
+formString = foldr (\t str -> char t <> str) "" . (fst . unTerm <$>)
+  where
+    char t = case t of
+      Number i -> show i
+      Operator Add -> "+"
+      Operator Multiply -> "*"
+      Parened terms -> "(" <> formString terms <> ")"
+
+termsParser :: Parser [Term]
+termsParser = do
+  parsed <- many $ (Number <$> decimal) <|> parens <|> (Operator Multiply <$ string "*") <|> (Operator Add <$ string "+")
+  pure $ Term . (,False) <$> parsed
+  where
+    parens = do
+      string "("
+      terms <- termsParser
+      string ")"
+      pure $ Parened terms
+
+evalTerm :: Term -> Term
+evalTerm (Term (Parened terms, False)) = Term (Parened (injectParens terms), True)
+evalTerm (Term (t, False)) = Term (t, True)
+evalTerm t = t
+
+injectParens :: [Term] -> [Term]
+injectParens [] = []
+injectParens (term : Term (Operator Add, _) : term' : rest) = injectParens $ Term (Parened [evalTerm term, (Term (Operator Add, True)), evalTerm term'], True) : rest
+injectParens (term : rest) = evalTerm term : injectParens rest
+
+convert :: ByteString -> Either String Expr
+convert = parseOnly expressionParser . B.concat . C.words
+
 part1 :: [ByteString] -> Int
-part1 = sum . (eval <$>) . convert
+part1 = sum . (eval <$>) . rights . (convert <$>)
 
 part2 :: [ByteString] -> Int
-part2 = const 0
-
-convert :: [ByteString] -> [Expr]
-convert = rights . (parseOnly expressionParser . B.concat . C.words <$>)
+part2 =
+  sum
+    . (eval <$>)
+    . rights
+    . (convert <$>)
+    . rights
+    . (fmap (C.pack . formString . injectParens) . parseOnly termsParser . B.concat . C.words <$>)
 
 solve :: FilePath -> IO ()
 solve = C.readFile >=> print . (part1 &&& part2) . C.lines
