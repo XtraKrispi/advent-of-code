@@ -3,6 +3,7 @@
 module Main where
 
 import Control.Arrow
+import Data.Bifunctor (Bifunctor (bimap))
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
 import Data.Void
 import Safe (headMay)
@@ -10,6 +11,9 @@ import System.Environment (getArgs)
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Char.Lexer (decimal)
+
+tripleToPair :: (a, b, c) -> (a, b)
+tripleToPair (a, b, _) = (a, b)
 
 type Parser = Parsec Void String
 
@@ -34,7 +38,8 @@ instructionParser = do
 
 part1 :: Input -> Int
 part1 =
-  (\(Depth a, HorizontalPosition b) -> a * b)
+  uncurry (*)
+    . bimap unDepth unHorizontalPosition
     . foldl processInstruction (Depth 0, HorizontalPosition 0)
  where
   processInstruction (Depth d, h) (Dive n) = (Depth (d + n), h)
@@ -43,7 +48,9 @@ part1 =
 
 part2 :: Input -> Int
 part2 =
-  (\(Depth a, HorizontalPosition b, _) -> a * b)
+  uncurry (*)
+    . bimap unDepth unHorizontalPosition
+    . tripleToPair
     . foldl processInstruction (Depth 0, HorizontalPosition 0, Aim 0)
  where
   processInstruction (d, h, Aim a) (Dive n) = (d, h, Aim (a + n))
