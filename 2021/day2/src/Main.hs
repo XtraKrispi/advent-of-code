@@ -21,7 +21,7 @@ data Instruction
 
 newtype Depth = Depth {unDepth :: Int}
 newtype HorizontalPosition = HorizontalPosition {unHorizontalPosition :: Int}
-
+newtype Aim = Aim {unAim :: Int}
 type Position = (Depth, HorizontalPosition)
 
 type Input = [Instruction]
@@ -42,7 +42,14 @@ part1 =
   processInstruction (d, HorizontalPosition h) (Forward n) = (d, HorizontalPosition (h + n))
 
 part2 :: Input -> Int
-part2 = const 0
+part2 =
+  (\(Depth a, HorizontalPosition b, _) -> a * b)
+    . foldl processInstruction (Depth 0, HorizontalPosition 0, Aim 0)
+ where
+  processInstruction (d, h, Aim a) (Dive n) = (d, h, Aim (a + n))
+  processInstruction (d, h, Aim a) (Surface n) = (d, h, Aim (a - n))
+  processInstruction (Depth d, HorizontalPosition h, Aim a) (Forward n) =
+    (Depth (d + (a * n)), HorizontalPosition (h + n), Aim a)
 
 main :: IO ()
 main = do
