@@ -17,32 +17,51 @@ type Input = [BinaryNumber]
 toDec :: String -> Int
 toDec = foldl' (\acc x -> acc * 2 + digitToInt x) 0
 
-groupUp :: [BinaryNumber] -> ([Min (Int, Int)], [Max (Int, Int)])
-groupUp = unzip . map (\x -> (Min (length x, head x), Max (length x, head x)))
-
-groupings :: Input -> [([Min (Int, Int)], [Max (Int, Int)])]
-groupings = fmap (groupUp . group . sort)
-
-maxesAndMins :: [([Min (Int, Int)], [Max (Int, Int)])] -> [(Int, Int)]
-maxesAndMins = fmap ((\(Min (_, a), Max (_, b)) -> (a, b)) . bimap mconcat mconcat)
+maxesAndMins :: Input -> ([Int], [Int])
+maxesAndMins =
+  unzip
+    . fmap
+      ( bimap (snd . getMin . mconcat) (snd . getMax . mconcat)
+          . unzip
+          . map (\x -> (Min (length x, head x), Max (length x, head x)))
+          . group
+          . sort
+      )
 
 rate :: BinaryNumber -> Int
 rate = toDec . (show =<<)
 
---part1 :: Input -> Int
 part1 :: Input -> Int
 part1 =
   uncurry (*)
     . bimap rate rate
-    . unzip
     . maxesAndMins
-    . groupings
     . transpose
 
-part2 :: Input -> Int
-part2 input = 0
+part2 :: Input -> Maybe Int
+part2 input =
+  (*)
+    <$> filterNumbers Min getMin 0 input
+    <*> filterNumbers Max getMax 0 input
+
+filterNumbers :: Monoid m => ((Int, Int) -> m) -> (m -> (Int, Int)) -> Int -> Input -> Maybe Int
+filterNumbers construct destruct _ [] = Nothing
+filterNumbers construct destruct _ [x] = Just (rate x)
+filterNumbers construct destruct idx xs =
+  let digitToUse =
+        (snd . destruct . mconcat)
+          . map (\x -> construct (length x, head x))
+          . group
+          . sort
+          $ transpose xs !! idx
+
+      filtered = filter (\x -> x !! idx == digitToUse) xs
+   in filterNumbers construct destruct (idx + 1) filtered
+
+transform :: [String] -> Input
+transform = (fmap (read . pure) <$>)
 
 main :: IO ()
 main = do
   fileName <- fromMaybe "input.txt" . headMay <$> getArgs
-  readFile fileName >>= print . (part1 &&& part2) . (fmap (read . pure) <$>) . lines
+  readFile fileName >>= print . (part1 &&& part2) . transform . lines
