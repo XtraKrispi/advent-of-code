@@ -19,7 +19,7 @@ import Data.Attoparsec.Text
     takeTill,
   )
 import Data.Foldable (Foldable (toList))
-import Data.List (intercalate, transpose)
+import Data.List (transpose)
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text.IO qualified as T
@@ -42,10 +42,6 @@ data Problem = Problem
     moves :: [Move]
   }
   deriving (Show)
-
-showStacks :: Array Int Stack -> String
-showStacks stacks =
-  intercalate "," $ unStack <$> toList stacks
 
 moveOne :: Int -> Int -> Array Int Stack -> Array Int Stack
 moveOne source destination stacks =
@@ -117,8 +113,8 @@ parseProblem = do
   Problem (listArray (0, length crates - 1) crates) <$> parseMoves
 
 getTop :: Array Int Stack -> [Char]
-getTop stacks =
-  catMaybes $ toList $ headMay . unStack <$> stacks
+getTop =
+  catMaybes . toList . fmap (headMay . unStack)
 
 part1 :: Text -> Either String [Char]
 part1 =
