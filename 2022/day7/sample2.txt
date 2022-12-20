@@ -1,0 +1,35 @@
+$ cd /
+$ ls
+dir bsnqsfm
+dir dtqvbspj
+dir hhhtrws
+dir ldmsq
+307337 pnm.slh
+dir pqcndb
+dir pwtqzwv
+212421 zcrfndg.cms
+$ cd bsnqsfm
+$ ls
+179236 lccnhn
+$ cd ..
+$ cd dtqvbspj
+$ ls
+221336 gdjfp.mfp
+273114 jjgpvcqv.jlq
+$ cd ..
+$ cd hhhtrws
+$ ls
+dir gcbg
+dir jjgpvcqv
+dir mgvdbtl
+1606 mgvdbtl.ztt
+dir qhv
+27538 wprqtd.wph
+$ cd gcbg
+$ ls
+dir bgcwh
+dir bsnqsfm
+dir jjgpvcqv
+186683 lccnhn
+dir rqbnd
+32944 zjfs.mdf
