@@ -8,28 +8,19 @@ dir ldmsq
 dir pqcndb
 dir pwtqzwv
 212421 zcrfndg.cms
-$ cd bsnqsfm
+$ cd ldmsq
 $ ls
-179236 lccnhn
-$ cd ..
-$ cd dtqvbspj
+dir jngnzc
+dir psgrjgr
+dir rgwp
+dir rtsmnzm
+dir wsd
+$ cd jngnzc
 $ ls
-221336 gdjfp.mfp
-273114 jjgpvcqv.jlq
-$ cd ..
-$ cd hhhtrws
+dir dzlcq
+dir gpcpgfh
+dir rlwwwngc
+dir swrlvd
+$ cd dzlcq
 $ ls
-dir gcbg
-dir jjgpvcqv
-dir mgvdbtl
-1606 mgvdbtl.ztt
-dir qhv
-27538 wprqtd.wph
-$ cd gcbg
-$ ls
-dir bgcwh
-dir bsnqsfm
-dir jjgpvcqv
-186683 lccnhn
-dir rqbnd
-32944 zjfs.mdf
+70984 lccnhn

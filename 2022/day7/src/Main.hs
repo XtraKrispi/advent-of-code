@@ -120,7 +120,7 @@ prettyPrintFileSystem (FileSystem fs) = go 0 [] (Map.toList fs)
 
 main :: IO ()
 main = do
-  input <- T.readFile "input.txt"
+  input <- T.readFile "sample2.txt"
   let result =
         FileSystem $
           Map.fromList $
@@ -128,8 +128,8 @@ main = do
               []
               [(([], "/"), FileSystemEntry Directory)]
               (T.lines input)
-  -- print $ foldl (\results (k, entry) -> (k, getSize result k) : results) [] (filterFileSystem (\fs _ e -> e == FileSystemEntry Directory) result)
+  print $ foldl (\results (k, entry) -> (k, getSize result k) : results) [] (filterFileSystem (\fs _ e -> e == FileSystemEntry Directory) result)
 
-  -- prettyPrintFileSystem result
-
+  prettyPrintFileSystem result
+  print $ getSize result (["/"], "ldmsq")
   print $ part1 result
