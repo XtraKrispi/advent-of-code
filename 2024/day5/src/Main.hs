@@ -15,9 +15,9 @@ type OrderChain = [Int]
 
 part1 :: Input -> Int
 part1 (Input rules updates) = sum $ middleNumber <$> filter (\u -> isValidUpdate rules [] u u) updates
- where
-  middleNumber :: Update -> Int
-  middleNumber xs = xs !! (length xs `div` 2)
+
+middleNumber :: Update -> Int
+middleNumber xs = xs !! (length xs `div` 2)
 
 isValidUpdate :: IntMap [Int] -> [Int] -> Update -> Update -> Bool
 isValidUpdate _ _ _ [] = True
@@ -35,13 +35,29 @@ isValid rules prevs wholeLine current =
         Just ps -> (filter (\p -> p `elem` wholeLine) ps) \\ prevs == []
 
 part2 :: Input -> Int
-part2 _ = 0
+part2 (Input rules updates) = sum $ middleNumber . rearrange rules <$> filter (\u -> not $ isValidUpdate rules [] u u) updates
+
+rearrange :: IntMap [Int] -> Update -> Update
+rearrange rules update = go update []
+ where
+  go :: Update -> [Int] -> Update
+  go [] accum = accum
+  go (x : xs) accum =
+    case Map.lookup x rules of
+      Nothing -> go xs (accum ++ [x])
+      Just prec ->
+        let invalid = filter (`elem` prec) xs
+            valid = filter (not . (`elem` prec)) xs
+         in if null invalid
+              then
+                go valid (accum ++ [x])
+              else go (invalid ++ [x] ++ valid) accum
 
 makeInput :: String -> Input
 makeInput contents =
   let (precedenceRules, update) =
-        bimap makePrecedenceRules (makeUpdate . drop 1) $
-          break (\s -> s == "") $
+        bimap makePrecedenceRules (makeUpdate) $
+          break' (\s -> s == "") $
             lines contents
    in Input precedenceRules update
  where
@@ -51,10 +67,13 @@ makeInput contents =
   makePrecedenceRules =
     foldr
       ( \s m ->
-          let (x :: Int, y :: Int) = bimap read (read . drop 1) $ break (\c -> c == '|') s
+          let (x, y) = bimap read read $ break' (\c -> c == '|') s
            in Map.insertWith (++) y [x] m
       )
       Map.empty
+
+break' :: (a -> Bool) -> [a] -> ([a], [a])
+break' p xs = second (drop 1) $ break p xs
 
 splitAt' :: (Char -> Bool) -> String -> [String]
 splitAt' p s = reverse $ go [] s
