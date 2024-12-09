@@ -67,7 +67,6 @@ part2 input@(Input _ m g) =
           ( \c sims ->
               -- Can we be smart about where we start?
               -- Look at the coordinate of the obstruction and start the guard right before that?
-
               let x = takeWhile (\gc -> fst gc /= c) p'
                   (_, isLooped) = simulate (Input [] (Map.insert c Obstruction m) g)
                in if isLooped
