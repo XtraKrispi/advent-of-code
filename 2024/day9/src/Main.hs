@@ -3,116 +3,162 @@
 module Main where
 
 import Control.Arrow ((&&&))
-import Data.Bifunctor (Bifunctor (bimap))
-import Data.Char (digitToInt, intToDigit)
+import Data.Char (digitToInt)
+import Data.Foldable (maximumBy)
 import Data.Functor ((<&>))
+import Data.List (intercalate)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, listToMaybe)
-import Data.Sequence (Seq ((:<|), (:|>)), (<|), (><), (|>))
-import Data.Sequence qualified as Seq
 import System.Environment (getArgs)
+
+-- Two options:
+-- a) Map with indexes and for part 1 each block is of length 1
+-- Then move entire blocks (works for part 1 and part 2)
+
+-- b) Array with each block and scanning/swapping in place
 
 data Block = Empty | File Int
   deriving (Show, Eq)
 
 newtype Id = Id Int
-  deriving (Show)
+  deriving (Show, Eq, Num, Ord)
 newtype Length = Length Int
-  deriving (Show)
-newtype Index = Index Int
+  deriving (Show, Num, Eq, Ord)
+newtype Index = Index {unIndex :: Int}
   deriving (Show, Eq, Ord, Num, Enum)
 
+newtype From a = From a
+  deriving (Show)
+newtype To a = To a
+  deriving (Show)
+
 data Input = Input
-  { blocks :: Map Index Block
-  , empties :: Map Index Length
-  , numbered :: Map Index (Length, Id)
+  { files :: Map Index (Length, Id)
   , numberOfBlocks :: Int
   }
+  deriving (Show, Eq)
 
-instance Show Input where
-  show (Input blocks _ _ _) =
-    ( \b -> case b of
-        Empty -> '.'
-        File i -> intToDigit i
-    )
-      <$> Map.elems blocks
+prettyInput :: Input -> String
+prettyInput (Input files _) =
+  snd $
+    Map.foldlWithKey
+      ( \(Index prevEnd, str) (Index idx) ((Length len), (Id id)) ->
+          (Index (idx + len), str ++ intercalate " " (replicate (idx - prevEnd) ".") ++ " " ++ (intercalate " " (replicate len (show id))) ++ " ")
+      )
+      (0, "")
+      files
+
 computeChecksum :: Input -> Int
-computeChecksum (Input blocks _ _ _) =
+computeChecksum input =
   foldr
-    ( \(Index idx, b) s -> case b of
-        Empty -> s
-        File i -> s + (i * idx)
+    ( \(Index idx, (Length l, Id i)) total ->
+        (sum $ (* i) <$> [idx .. idx + l - 1]) + total
     )
     0
-    $ Map.assocs blocks
+    $ Map.assocs input.files
 
-solve :: (Input -> Input) -> Input -> Int
-solve fn = computeChecksum . go
+solve :: Input -> Int
+solve =
+  computeChecksum
+    . defrag Nothing
  where
-  go :: Input -> Input
-  go blocks =
-    let stepped = fn blocks
-     in if isComplete stepped
-          then
-            stepped
-          else go stepped
+
+defrag :: Maybe Id -> Input -> Input
+defrag i input =
+  let (i', input') = step i input
+   in if input' == input
+        then input
+        else defrag i' input'
 
 part1 :: Input -> Int
-part1 = solve step
+part1 = solve . expand
+ where
+  expand input = input{files = Map.foldrWithKey (\k v m -> m) Map.empty input.files}
 
-isComplete :: Input -> Bool
-isComplete (Input blocks _ _ _) = uncurry (&&) $ bimap (all (/= Empty)) (all (== Empty)) $ break (== Empty) $ Map.elems blocks
+step :: Maybe Id -> Input -> (Maybe Id, Input)
+step m input =
+  case findCandidate m input of
+    Nothing -> (Nothing, input)
+    Just (i, (from, to)) -> (Just i, move from to input)
 
-step :: Input -> Input
-step input =
-  if isComplete input
-    then
-      input
-    else case (first (\_ v -> v == Empty) input.blocks, Main.last (\_ v -> v /= Empty) input.blocks) of
-      (Just kvp1, Just kvp2) -> input{blocks = (swap kvp1 kvp2 input.blocks)}
-      _ -> error "Huh?"
+findCandidate :: Maybe Id -> Input -> (Maybe (Id, (From Index, To Index)))
+findCandidate m input = go m
+ where
+  go :: Maybe Id -> Maybe (Id, (From Index, To Index))
+  go minSearchedId =
+    case findFileBlock minSearchedId input of
+      Nothing -> Nothing
+      Just (maxIndex, (maxLength, i)) ->
+        case findHole maxIndex maxLength input of
+          Just idx -> Just $ (i, (From maxIndex, To idx))
+          Nothing -> go (Just i)
 
-swap :: (Ord k) => (k, v) -> (k, v) -> Map k v -> Map k v
-swap (k1, v1) (k2, v2) = Map.insert k2 v1 . Map.insert k1 v2
+findFileBlock :: Maybe Id -> Input -> Maybe (Index, (Length, Id))
+findFileBlock minSearchedId input =
+  Map.lookupMax $
+    Map.filterWithKey
+      (\_ (_, i) -> maybe True (\m -> i < m) minSearchedId)
+      input.files
 
-first :: (Ord k) => (k -> v -> Bool) -> Map k v -> Maybe (k, v)
-first p = listToMaybe . Map.assocs . Map.filterWithKey p
+-- A hole is the min index where the difference between that index and the next is > length
 
-last :: (Ord k) => (k -> v -> Bool) -> Map k v -> Maybe (k, v)
-last p = listToMaybe . reverse . Map.assocs . Map.filterWithKey p
+findHole :: Index -> Length -> Input -> Maybe Index
+findHole maxSearched (Length l) input = go (Map.assocs input.files) Nothing
+ where
+  go :: [(Index, (Length, Id))] -> Maybe Index -> Maybe Index
+  go ((Index idx1, (Length len1, _)) : x@(Index idx2, _) : xs) result =
+    if idx2 - (idx1 + len1) >= l && (Index idx2 < maxSearched)
+      then Just (Index $ idx1 + len1)
+      else go (x : xs) result
+  go _ result = result
 
-step' :: Input -> Input
-step' = id
+move :: From Index -> To Index -> Input -> Input
+move (From fromIndex) (To toIndex) input =
+  let
+    newFiles :: Map Index (Length, Id)
+    newFiles = case Map.lookup fromIndex input.files of
+      Nothing -> input.files
+      Just val -> Map.delete fromIndex $ Map.insert toIndex val input.files
+   in
+    input{files = newFiles}
 
 apply :: (a -> a) -> a -> Int -> a
 apply _ a 0 = a
 apply fn a n = apply fn (fn a) (n - 1)
 
 part2 :: Input -> Int
-part2 _ = 0 -- solve step'
+part2 = solve
 
 makeInput :: String -> Input
 makeInput contents =
-  let s = go (0, 0, Map.empty) contents
-      (empties, blocks) = buildBlocks s
-   in Input s empties blocks 0
+  uncurry Input (buildBlocks (Id 0, Index 0, Map.empty) contents)
  where
-  go :: (Int, Index, Map Index Block) -> String -> Map Index Block
-  go (currentId, idx, accum) (x : y : xs) =
-    let blocks = zip [idx ..] (replicate (digitToInt x) (File currentId))
-        blockIndex = maximum (fst <$> blocks) + 1
-        empties = zip [blockIndex ..] (replicate (digitToInt y) Empty)
-        emptiesIndex = if null empties then blockIndex else maximum (fst <$> empties) + 1
-     in go (currentId + 1, emptiesIndex, insertInto empties (insertInto blocks accum)) xs
-  go (currentId, idx, accum) [x] = insertInto (zip [idx ..] (replicate (digitToInt x) (File currentId))) accum
-  go (_, _, accum) [] = accum
-
-  buildBlocks :: Map Index Block -> (Map Index Length, Map Index (Length, Id))
-  buildBlocks s = (Map.empty, Map.empty)
+  buildBlocks :: (Id, Index, Map Index (Length, Id)) -> String -> (Map Index (Length, Id), Int)
+  buildBlocks (nextId, nextIndex, accum) (x : y : xs) =
+    let
+      len = Index $ digitToInt x
+      empties = Index $ digitToInt y
+     in
+      buildBlocks (nextId + 1, nextIndex + len + empties, Map.insert nextIndex (Length (digitToInt x), nextId) accum) xs
+  buildBlocks (nextId, nextIndex, accum) [x] =
+    let result = Map.insert nextIndex (Length $ digitToInt x, nextId) accum
+     in (result, unIndex $ nextIndex + Index (digitToInt x))
+  buildBlocks (_, _, accum) _ = (accum, getTotal accum)
+  getTotal :: Map Index (Length, Id) -> Int
+  getTotal m =
+    (\(Index idx, (Length l, _)) -> idx + l) $ maximumBy (\(a, _) (b, _) -> compare a b) $ Map.assocs m
 
 insertInto :: (Ord k) => [(k, v)] -> Map k v -> Map k v
 insertInto vals m = foldr (uncurry Map.insert) m vals
+
+setup :: IO (Maybe Id, Input)
+setup = do
+  input <- makeInput <$> readFile "sample.txt"
+  let (m, input') = step Nothing input
+  let (m', input'') = step m input'
+  let (m'', input''') = step m' input''
+  pure (m'', input''')
 
 main :: IO ()
 main =
