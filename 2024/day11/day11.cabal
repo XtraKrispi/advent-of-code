@@ -67,7 +67,7 @@ executable day11
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.20.0.0, containers, mtl, transformers
+    build-depends:    base ^>=4.20.0.0, containers, MemoTrie
 
     -- Directories containing source files.
     hs-source-dirs:   src
