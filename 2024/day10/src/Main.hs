@@ -11,7 +11,6 @@ import Data.List (nub)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe, listToMaybe)
-import Debug.Trace (trace)
 import System.Environment (getArgs)
 
 type Row = Int
@@ -22,7 +21,7 @@ type Path = (Coord, [Coord])
 type Input = Map Coord Int
 
 part1 :: Input -> Int
-part1 input = sum $ (\ps -> length $ nub $ fmap (\(_, p) -> last p) ps) <$> ((\trailhead -> walk trailhead 0 input trailhead) <$> getAllStartingCoords input)
+part1 input = sum $ (\trailhead -> length $ nub $ fmap (\(_, p) -> last p) $ walk trailhead 0 input trailhead) <$> getAllStartingCoords input
 
 walk :: Coord -> Int -> Input -> Coord -> [Path]
 walk trailhead n m coord = do
@@ -44,14 +43,10 @@ neighbors (row, col) =
   , (row - 1, col)
   , (row, col - 1)
   , (row, col + 1)
-  -- , (row - 1, col - 1)
-  -- , (row - 1, col + 1)
-  -- , (row + 1, col - 1)
-  -- , (row + 1, col + 1)
   ]
 
 part2 :: Input -> Int
-part2 _ = 0
+part2 input = sum $ (\trailhead -> length $ walk trailhead 0 input trailhead) <$> getAllStartingCoords input
 
 makeInput :: String -> Input
 makeInput contents = Map.fromList do
