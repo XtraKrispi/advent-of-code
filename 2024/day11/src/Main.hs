@@ -2,34 +2,43 @@ module Main where
 
 import Control.Arrow ((&&&))
 import Data.Functor ((<&>))
+import Data.IntMap (IntMap)
+import Data.IntMap qualified as IntMap
 import Data.Maybe (fromMaybe, listToMaybe)
 import System.Environment (getArgs)
 
 type Stone = Int
+type Cycle = Int
 
-type Input = [Int]
+type Input = [Stone]
 
-blink :: Input -> Input
+blink :: [Stone] -> [Stone]
 blink input = input >>= applyRule
- where
-  applyRule :: Stone -> [Stone]
-  applyRule 0 = [1]
-  applyRule x
-    | even (length (show x)) =
-        let str = show x
-            (left, right) = splitAt (length str `div` 2) str
-         in [read left, read right]
-    | otherwise = [x * 2024]
+
+solve :: Int -> Input -> Int
+solve n input = sum (apply blinks n (IntMap.fromListWith (+) [(i, 1) | i <- input]))
+
+blinks :: IntMap Int -> IntMap Int
+blinks stones = IntMap.fromListWith (+) [(stone', n) | (stone, n) <- IntMap.assocs stones, stone' <- applyRule stone]
+
+applyRule :: Stone -> [Stone]
+applyRule 0 = [1]
+applyRule x
+  | even (length (show x)) =
+      let str = show x
+          (left, right) = splitAt (length str `div` 2) str
+       in [read left, read right]
+  | otherwise = [x * 2024]
 
 apply :: (a -> a) -> Int -> a -> a
 apply _ 0 val = val
 apply fn n val = apply fn (n - 1) (fn val)
 
 part1 :: Input -> Int
-part1 input = length $ apply blink 25 input
+part1 = solve 25
 
 part2 :: Input -> Int
-part2 _ = 0
+part2 = solve 75
 
 makeInput :: String -> Input
 makeInput = (read <$>) . words
