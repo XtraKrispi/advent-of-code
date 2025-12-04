@@ -39,4 +39,5 @@ executable day4
   build-depends:
       base >=4.7 && <5
     , containers
+    , transformers
   default-language: GHC2024
