@@ -1,0 +1,41 @@
+name: day4
+version: 0.1.0.0
+#synopsis:
+#description:
+homepage: https://github.com/githubuser/day4#readme
+license: BSD-3-Clause
+author: Author name here
+maintainer: example@example.com
+copyright: 2025 Author name here
+category: Web
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+language: GHC2024
+
+default-extensions:
+  - OverloadedStrings
+  - OverloadedRecordDot
+  - BlockArguments
+
+dependencies:
+  - base >= 4.7 && < 5
+  - containers
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wmissing-home-modules
+  - -Wpartial-fields
+  - -Wredundant-constraints
+
+executables:
+  day4:
+    source-dirs: src
+    main: Main.hs
+
+github: githubuser/day4
