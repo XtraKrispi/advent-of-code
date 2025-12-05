@@ -1,0 +1,44 @@
+name: day5
+version: 0.1.0.0
+#synopsis:
+#description:
+homepage: https://github.com/githubuser/day5#readme
+license: BSD-3-Clause
+author: Author name here
+maintainer: example@example.com
+copyright: 2025 Author name here
+category: Web
+extra-source-files:
+  - README.md
+  - CHANGELOG.md
+
+language: GHC2024
+
+default-extensions:
+  - OverloadedStrings
+  - BlockArguments
+  - OverloadedRecordDot
+
+dependencies:
+  - base >= 4.7 && < 5
+  - containers
+  - megaparsec
+  - transformers
+
+ghc-options:
+  - -Wall
+  - -Wcompat
+  - -Widentities
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wmissing-export-lists
+  - -Wmissing-home-modules
+  - -Wpartial-fields
+  - -Wredundant-constraints
+
+executables:
+  day5:
+    source-dirs: src
+    main: Main.hs
+
+github: githubuser/day5
